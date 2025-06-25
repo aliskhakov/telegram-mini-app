@@ -51,8 +51,11 @@
             // Получаем initData из объекта Telegram WebApp
             const initData = tg.initData || 'InitData не доступен';
             
-            // Показываем alert с initData
-            tg.showAlert(`InitData: ${JSON.stringify(initData)}`);
+            // // Показываем alert с initData
+            // tg.showAlert(`InitData: ${JSON.stringify(initData)}`);
+            
+            // 2. Через стандартный alert (для отладки)
+            alert(`InitData: ${JSON.stringify(tg.initData)}`);
         });
     </script>
 </body>
