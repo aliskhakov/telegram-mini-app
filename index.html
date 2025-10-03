@@ -1,62 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Telegram Mini App InitData Example</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Ecochempion</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-        }
-        .container {
-            text-align: center;
+            margin: 0;
             padding: 20px;
         }
-        button {
-            background-color: #0088cc;
-            color: white;
-            border: none;
-            padding: 12px 24px;
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 20px;
             border-radius: 10px;
-            font-size: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }        #status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #90EE90;
+            color: #006400;
+        }
+        .disconnected {
+            background-color: #FFCCCB;
+            color: #8B0000;
+        }
+        img {
+            max-width: 100%;
+            max-height: 70vh;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 20px 0;
+            display: block;
+        }
+        .info {
+            background-color: #e6f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            background-color: #007bff;
+            color: white;
         }
         button:hover {
-            background-color: #0077b3;
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Telegram Mini App</h2>
-        <p>Нажмите кнопку, чтобы увидеть initData</p>
-        <button id="showDataBtn">Показать initData</button>
+        <h1>Привет экочемпион!</h1>
+        
+        <img id="image" src="" alt="Изображение появится здесь после подключения"<>
+
+        <div class="controls">
+            <button id="connectBtn">Подключиться</button>
+            <button id="disconnectBtn" disabled>Отключиться</button>
+        </div>
+
+        <div id="status" class="disconnected">Не подключено</div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
+        const statusElement = document.getElementById('status');
+        const imageElement = document.getElementById('image');
+        const imageInfoElement = document.getElementById('imageInfo');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
         
-        // Инициализация приложения
-        tg.expand(); // Раскрываем приложение на весь экран
-        
-        document.getElementById('showDataBtn').addEventListener('click', () => {
-            // Получаем initData из объекта Telegram WebApp
-            const initData = tg.initData || 'InitData не доступен';
+        let socket = null;
+
+        function connect() {
+            if (socket) {
+                socket.close();
+            }
+
+            socket = new WebSocket('ws://158.160.101.85:8080/ws');
             
-            // // Показываем alert с initData
-            // tg.showAlert(`InitData: ${JSON.stringify(initData)}`);
-            
-            // 2. Через стандартный alert (для отладки)
-            alert(`InitData: ${JSON.stringify(tg.initData)}`);
-        });
+            socket.onopen = function() {
+                statusElement.textContent = 'Подключено к серверу';
+                statusElement.className = 'connected'; 
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            };
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.url) {
+                    imageElement.src = data.url
+                }
+            };
+
+            socket.onclose = function() {
+                statusElement.textContent = 'Отключено от сервера';
+                statusElement.className = 'disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                imageInfoElement.innerHTML = 'Соединение закрыто';
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                statusElement.textContent = 'Ошибка подключения';
+                imageInfoElement.innerHTML = 'Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен.';
+            };
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        }
+
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+
+        window.addEventListener('load', connect);
     </script>
 </body>
 </html>
